@@ -14,6 +14,7 @@ import Control.Monad
 import System.Directory
 import System.FilePath
 import TSPLK
+import System.IO.Unsafe
 
 
 -- getting at the values. Not safe.
@@ -210,10 +211,65 @@ lk dir file outdir = do
     let score1 = segScore (horReorderGen (newOrder tour) myD)
     putStrLn (file ++ "," ++ (show score1) ++ "\n") 
     
+    
+-- ### TIME TESTING FUNCTIONS ###
+-- get diagram directly
+getDiagram :: FilePath -> IO LD
+getDiagram file = do
+    res <- parseFromFile csvFile file
+    let strForm = fromRight res
 
+    let myD = createLD strForm
+    return myD
 
+-- in ghci, precede the following functions with
+-- let myD = getDiagram SOME_FILE.CSV
+-- THIS SHOULD ONLY BE USED TO TEST TIMING DATA
 
+-- time test for sortD
+timeTestSet2 :: IO LD -> Int
+timeTestSet2 d = segScore (sortD (names d') d')
+    where d' = unsafePerformIO d
 
+-- time test for sSortMin
+timeTestOverlap2 :: IO LD -> Int
+timeTestOverlap2 d = segScore (sSortMin d')
+    where d' = unsafePerformIO d
+    
+-- time test for sortD
+timeTestSet :: FilePath -> IO()
+timeTestSet file = do
+    res <- parseFromFile csvFile file
+    let strForm = fromRight res
+
+    let myD = createLD strForm
+    let score1 = segScore (sortD (names myD) myD)
+    putStrLn (file ++ "," ++ (show score1))
+    
+-- time test for sSortMin
+timeTestOverlap :: FilePath -> IO()
+timeTestOverlap file = do
+    res <- parseFromFile csvFile file
+    let strForm = fromRight res
+
+    let myD = createLD strForm
+    let score1 = segScore (sSortMin myD)
+    putStrLn (file ++ "," ++ (show score1))
+    
+-- time test for LK
+timeTestLK :: FilePath -> IO()
+timeTestLK file = do
+    res <- parseFromFile csvFile file
+    let strForm = fromRight res
+
+    let myD = createLD strForm
+    let edgeS = edgesStr myD
+    
+    let filebase = takeBaseName file
+    
+    tour <- tsp defConfig edgeS "tour.txt"
+    let score1 = segScore (horReorderGen (newOrder tour) myD)
+    putStrLn (file ++ "," ++ (show score1)) 
 
 
 
@@ -250,7 +306,6 @@ createMatrix = map createMatrix'
 
 lineTotals :: [[Int]] -> [Int]
 lineTotals = map sum
-
 
 
 
